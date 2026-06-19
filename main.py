@@ -1,12 +1,15 @@
 from pathlib import Path
 import argparse
 import requests
-import sys
+from rich.console import Console
+from rich.panel import Panel
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-PLANNER_MODEL = "qwen3:8b"
-CODER_MODEL = "qwen2.5-coder:7b"
-REVIEWER_MODEL = "qwen3:8b"
+PLANNER_MODEL = None
+CODER_MODEL = None
+REVIEWER_MODEL = None
+
+console = Console()
 
 
 class RepoScanner:
@@ -49,19 +52,13 @@ class OllamaClient:
             OLLAMA_URL,
             json={
                 "model": model,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
+                "messages": [{"role": "user", "content": prompt}],
                 "stream": False,
             },
             timeout=300,
         )
 
         response.raise_for_status()
-
         return response.json()["message"]["content"]
 
 
@@ -79,9 +76,7 @@ class ReviewAgent:
             try:
                 print(f"[Reader] Loading: {file.name}", flush=True)
                 content = file.read_text(encoding="utf-8")
-                project_content.append(
-                    f"\nFILE: {file}\n{content[:5000]}"
-                )
+                project_content.append(f"\nFILE: {file}\n{content[:5000]}")
             except Exception:
                 pass
 
@@ -109,59 +104,64 @@ Codebase:
 class PlannerAgent:
     @staticmethod
     def create_plan(task: str):
-        prompt = f"""
-Create a step-by-step implementation plan.
+        console.print(
+            f"🟡 Planner Model: {PLANNER_MODEL}",
+            style="bold yellow"
+        )
+        console.print(
+            "🟡 Generating implementation plan...",
+            style="yellow"
+        )
 
-Task:
-{task}
-"""
-
-        print(f"[Planner] Using model: {PLANNER_MODEL}", flush=True)
-        print("[Planner] Generating implementation plan...", flush=True)
-
+        prompt = f"Create a step-by-step implementation plan.\n\nTask:\n{task}"
         return OllamaClient.chat(PLANNER_MODEL, prompt)
 
 
 class CoderAgent:
     @staticmethod
     def generate_code(task: str, plan: str):
-        prompt = f"""
-Task:
-{task}
+        console.print(
+            f"🟢 Coder Model: {CODER_MODEL}",
+            style="bold green"
+        )
+        console.print(
+            "🟢 Generating solution...",
+            style="green"
+        )
 
-Plan:
-{plan}
-
-Generate the implementation approach.
-"""
-
-        print(f"[Coder] Using model: {CODER_MODEL}", flush=True)
-        print("[Coder] Generating solution...", flush=True)
-
+        prompt = f"Task:\n{task}\n\nPlan:\n{plan}\n\nGenerate the implementation approach."
         return OllamaClient.chat(CODER_MODEL, prompt)
 
 
 def run_review(args):
-    result = ReviewAgent.review_project(args.path)
-    print(result)
+    print(ReviewAgent.review_project(args.path))
 
 
 def run_edit(args):
     plan = PlannerAgent.create_plan(args.task)
 
-    print("\n=== PLAN ===\n")
-    print(plan)
+    if getattr(args, "show_plan", True):
+        console.print(
+            Panel(
+                plan,
+                title="🟡 Plan",
+                border_style="yellow",
+            )
+        )
 
     code = CoderAgent.generate_code(args.task, plan)
 
-    print("\n=== GENERATED OUTPUT ===\n")
-    print(code)
+    if getattr(args, "show_solution", True):
+        console.print(
+            Panel(
+                code,
+                title="🟢 Generated Solution",
+                border_style="green",
+            )
+        )
 
 
 def main():
-    if CURRENT_PERMISSION is None:
-        TerminalHelper.select_permissions()
-
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers(dest="command")
@@ -171,15 +171,23 @@ def main():
 
     edit_parser = subparsers.add_parser("edit")
     edit_parser.add_argument("task")
+    edit_parser.add_argument("--planner-model", default="qwen3:8b")
+    edit_parser.add_argument("--coder-model", default="qwen2.5-coder:7b")
+    edit_parser.add_argument("--show-plan", action="store_true")
+    edit_parser.add_argument("--show-solution", action="store_true")
 
     args = parser.parse_args()
 
+    global PLANNER_MODEL, CODER_MODEL, REVIEWER_MODEL
+
+    PLANNER_MODEL = getattr(args, "planner_model", "qwen3:8b")
+    CODER_MODEL = getattr(args, "coder_model", "qwen2.5-coder:7b")
+    REVIEWER_MODEL = PLANNER_MODEL
+
     if args.command == "review":
         run_review(args)
-
     elif args.command == "edit":
         run_edit(args)
-
     else:
         parser.print_help()
 
