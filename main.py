@@ -1,8 +1,7 @@
-
-
 from pathlib import Path
 import argparse
 import requests
+import sys
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 PLANNER_MODEL = "qwen3:8b"
@@ -37,6 +36,7 @@ class RepoScanner:
                 ".json",
                 ".md",
             }:
+                print(f"[Scanner] Found file: {path}", flush=True)
                 files.append(path)
 
         return files
@@ -70,16 +70,24 @@ class ReviewAgent:
     def review_project(project_path: str):
         files = RepoScanner.get_files(project_path)
 
+        print(f"[Scanner] Total files discovered: {len(files)}", flush=True)
+        print("[Reviewer] Reading project files...", flush=True)
+
         project_content = []
 
         for file in files:
             try:
+                print(f"[Reader] Loading: {file.name}", flush=True)
                 content = file.read_text(encoding="utf-8")
                 project_content.append(
                     f"\nFILE: {file}\n{content[:5000]}"
                 )
             except Exception:
                 pass
+
+        print("[Context] Building review context...", flush=True)
+        print(f"[Context] Loaded {len(project_content)} files", flush=True)
+        print(f"[Reviewer] Sending request to {REVIEWER_MODEL}...", flush=True)
 
         prompt = f"""
 Review this codebase.
@@ -108,6 +116,9 @@ Task:
 {task}
 """
 
+        print(f"[Planner] Using model: {PLANNER_MODEL}", flush=True)
+        print("[Planner] Generating implementation plan...", flush=True)
+
         return OllamaClient.chat(PLANNER_MODEL, prompt)
 
 
@@ -123,6 +134,9 @@ Plan:
 
 Generate the implementation approach.
 """
+
+        print(f"[Coder] Using model: {CODER_MODEL}", flush=True)
+        print("[Coder] Generating solution...", flush=True)
 
         return OllamaClient.chat(CODER_MODEL, prompt)
 
@@ -145,6 +159,9 @@ def run_edit(args):
 
 
 def main():
+    if CURRENT_PERMISSION is None:
+        TerminalHelper.select_permissions()
+
     parser = argparse.ArgumentParser()
 
     subparsers = parser.add_subparsers(dest="command")

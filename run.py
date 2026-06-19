@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 # Scyther CLI entrypoint.
@@ -13,11 +12,45 @@ from pathlib import Path
 import sys
 import time
 
+PERMISSION_MODES = {
+    "1": "Read + Write (Current Directory)",
+    "2": "Ask Before Edit (Current Directory)",
+    "3": "Read Only (Current Directory)",
+    "4": "Ask Before Edit (Anywhere)",
+    "5": "Read Only (Anywhere)",
+    "6": "Full Read + Write (Anywhere) [DANGER]",
+}
+
+CURRENT_PERMISSION = None
+
 BASE_DIR = Path(__file__).parent
 MAIN_FILE = BASE_DIR / "main.py"
 
 
 class TerminalHelper:
+    @staticmethod
+    def select_permissions():
+        global CURRENT_PERMISSION
+
+        print("\n===================================")
+        print(" Scyther Permission Mode")
+        print("===================================")
+
+        for key, value in PERMISSION_MODES.items():
+            print(f"{key}. {value}")
+
+        print("===================================")
+
+        while True:
+            choice = input("Select Permission Mode: ").strip()
+
+            if choice in PERMISSION_MODES:
+                CURRENT_PERMISSION = choice
+                print(f"\n[Permission] {PERMISSION_MODES[choice]} selected\n")
+                break
+
+            print("Invalid option")
+
     @staticmethod
     def review_project():
         path = str(Path.cwd())
@@ -97,7 +130,7 @@ class TerminalHelper:
 
 MENU = """
 ===================================
- MyCoder Terminal Helper
+ Scyther Terminal Helper
 ===================================
 
 1. Review Project
@@ -110,6 +143,9 @@ MENU = """
 
 
 def main():
+    if CURRENT_PERMISSION is None:
+        TerminalHelper.select_permissions()
+
     while True:
         print(MENU)
 
