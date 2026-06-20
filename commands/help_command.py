@@ -8,7 +8,7 @@ class HelpCommand:
     def execute(context):
         context.console.print(
             Panel.fit(
-                "/permission   Change permission mode\n/display      Display settings\n/model        Change Ollama model\n/help         Show help\n/exit         Exit Scyther\n/bye          Exit Scyther\n\nBuilt-in Actions\nlist files\nshow files",
+                "/permission   Change permission mode\n/display      Display settings\n/help         Show help\n/exit         Exit Scyther",
                 title="Help",
                 border_style="blue",
             )

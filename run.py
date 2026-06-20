@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 
-import subprocess
 from datetime import datetime
 from pathlib import Path
-import sys
 
 from rich.console import Console
 from rich.panel import Panel
 
-from core.config import ACTIVE_MODELS, CURRENT_PERMISSION, DISPLAY_MODE, PERMISSION_MODES
+from core.config import CURRENT_PERMISSION, DISPLAY_MODE, PERMISSION_MODES
 from core.models import CommandStatus, RuntimeContext
+from services.file_service import FileService
+from permissions.permission_manager import PermissionManager
+from services.repo_service import RepoService
 from routing.command_router import CommandRouter
 from routing.intent_router import IntentRouter
+from ui.file_renderer import FileRenderer
+from ui.repo_renderer import RepoRenderer
 
 BASE_DIR = Path(__file__).parent
-MAIN_FILE = BASE_DIR / "main.py"
-
 console = Console()
 
 
@@ -24,303 +25,128 @@ class TerminalHelper:
         console=console,
         current_permission=CURRENT_PERMISSION,
         display_mode=DISPLAY_MODE,
-        active_models=ACTIVE_MODELS,
         base_dir=BASE_DIR,
-        main_file=MAIN_FILE,
     )
+    permission_manager = PermissionManager(context)
+    repo_service = RepoService(str(BASE_DIR))
+    file_service = FileService(str(BASE_DIR))
 
     @staticmethod
     def select_permissions():
-        print("\n===================================")
-        print(" Scyther Permission Mode")
-        print("===================================")
-        for key, value in PERMISSION_MODES.items():
-            print(f"{key}. {value}")
-        print("===================================")
-        while True:
-            choice = input("Select Permission Mode: ").strip()
-            if choice in PERMISSION_MODES:
-                TerminalHelper.context.current_permission = choice
-                console.print(
-                    Panel.fit(PERMISSION_MODES[choice], title="Permission Selected", border_style="green")
-                )
-                print()
-                break
-            print("Invalid option")
+        from commands.permission_command import PermissionCommand
+
+        return PermissionCommand.execute(TerminalHelper.context)
 
     @staticmethod
     def display_settings():
-        console.print(
-            Panel.fit(
-                "1. Minimal\n2. Standard (Recommended)\n3. Verbose\n4. Debug",
-                title="Display Mode",
-                border_style="cyan",
-            )
-        )
-        choice = input("display> ").strip()
-        mapping = {"1": "minimal", "2": "standard", "3": "verbose", "4": "debug"}
-        if choice in mapping:
-            TerminalHelper.context.display_mode = mapping[choice]
-            console.print(
-                Panel.fit(
-                    f"Active Mode: {TerminalHelper.context.display_mode.upper()}",
-                    title="Display Updated",
-                    border_style="green",
-                )
-            )
+        from commands.display_command import DisplayCommand
 
-    @staticmethod
-    def model_settings():
-        try:
-            result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
-        except Exception as e:
-            console.print(f"Unable to load Ollama models: {e}", style="bold red")
-            return
-
-        lines = [line.strip() for line in result.stdout.splitlines()[1:] if line.strip()]
-        if not lines:
-            console.print("No Ollama models found", style="bold red")
-            return
-
-        models = [line.split()[0] for line in lines]
-        console.print(
-            Panel.fit(
-                "\n".join([f"{i + 1}. {model}" for i, model in enumerate(models)]),
-                title="Installed Ollama Models",
-                border_style="green",
-            )
-        )
-        console.print("\nSelect target:")
-        console.print("1. Planner")
-        console.print("2. Coder")
-        console.print("3. Reviewer")
-        console.print("4. Classifier")
-        console.print("5. All Models")
-        target = input("Target: ").strip()
-        choice = input("Model number: ").strip()
-        if not choice.isdigit() or int(choice) < 1 or int(choice) > len(models):
-            return
-        selected_model = models[int(choice) - 1]
-        if target == "1":
-            TerminalHelper.context.active_models["planner"] = selected_model
-        elif target == "2":
-            TerminalHelper.context.active_models["coder"] = selected_model
-        elif target == "3":
-            TerminalHelper.context.active_models["reviewer"] = selected_model
-        elif target == "4":
-            TerminalHelper.context.active_models["classifier"] = selected_model
-        elif target == "5":
-            TerminalHelper.context.active_models["planner"] = selected_model
-            TerminalHelper.context.active_models["coder"] = selected_model
-            TerminalHelper.context.active_models["reviewer"] = selected_model
-        else:
-            return
-        console.print(
-            Panel.fit(
-                f"Planner : {TerminalHelper.context.active_models['planner']}\n"
-                f"Coder : {TerminalHelper.context.active_models['coder']}\n"
-                f"Reviewer : {TerminalHelper.context.active_models['reviewer']}\n"
-                f"Classifier : {TerminalHelper.context.active_models['classifier']}",
-                title="Active Models",
-                border_style="yellow",
-            )
-        )
-
-    @staticmethod
-    def review_project():
-        start_time = datetime.now()
-        if TerminalHelper.context.display_mode == "debug":
-            console.print(
-                f"[{start_time.strftime('%H:%M:%S.%f')[:-3]}] Launching review on {Path.cwd()}",
-                style="bright_black",
-            )
-        process = subprocess.Popen(
-            [sys.executable, str(MAIN_FILE), "review", str(Path.cwd())],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        for line in process.stdout:
-            if TerminalHelper.context.display_mode == "minimal":
-                continue
-            line = line.rstrip()
-            if TerminalHelper.context.display_mode == "debug":
-                line = f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] {line}"
-            if "[Planner]" in line:
-                console.print(line, style="bold yellow")
-            elif "[Coder]" in line:
-                console.print(line, style="bold green")
-            elif "[Reviewer]" in line:
-                console.print(line, style="bold magenta")
-            elif "[Scanner]" in line:
-                console.print(line, style="bold cyan")
-            elif "[Reader]" in line:
-                console.print(line, style="blue")
-            elif "[Context]" in line:
-                console.print(line, style="bright_blue")
-            else:
-                if TerminalHelper.context.display_mode in ["debug", "verbose"]:
-                    print(line)
-        process.wait()
-        if TerminalHelper.context.display_mode == "debug":
-            duration = (datetime.now() - start_time).total_seconds()
-            console.print(
-                f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Review completed in {duration:.2f}s",
-                style="bright_black",
-            )
-
-    @staticmethod
-    def edit_project(task: str):
-        start_time = datetime.now()
-        if not task:
-            print("Task cannot be empty")
-            return
-        process = subprocess.Popen(
-            [
-                sys.executable,
-                str(MAIN_FILE),
-                "edit",
-                task,
-                "--planner-model",
-                TerminalHelper.context.active_models["planner"],
-                "--coder-model",
-                TerminalHelper.context.active_models["coder"],
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        for line in process.stdout:
-            if TerminalHelper.context.display_mode == "minimal":
-                continue
-            print(line, end="")
-        process.wait()
-        if TerminalHelper.context.display_mode == "debug":
-            duration = (datetime.now() - start_time).total_seconds()
-            console.print(
-                f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Edit completed in {duration:.2f}s",
-                style="bright_black",
-            )
+        return DisplayCommand.execute(TerminalHelper.context)
 
     @staticmethod
     def list_files():
-        console.print(
-            Panel.fit("Listing files in current project", title="Tool Action", border_style="blue")
+        result = TerminalHelper.repo_service.list_files()
+        RepoRenderer.render_file_list(result["files"])
+
+    @staticmethod
+    def show_tree(max_depth=None):
+        tree = TerminalHelper.repo_service.show_tree(max_depth=max_depth)
+        RepoRenderer.render_tree(tree)
+
+    @staticmethod
+    def find_file(filename: str):
+        matches = TerminalHelper.repo_service.find_file(filename)
+        for match in matches:
+            console.print(match)
+
+    @staticmethod
+    def repo_summary():
+        summary = TerminalHelper.repo_service.repo_summary()
+        RepoRenderer.render_summary(summary)
+
+    @staticmethod
+    def read_file(filename: str):
+        try:
+            result = TerminalHelper.file_service.read_file(filename)
+        except FileNotFoundError as exc:
+            FileRenderer.render_error(str(exc))
+            return
+        except IsADirectoryError as exc:
+            FileRenderer.render_error(str(exc))
+            return
+
+        FileRenderer.render_file(
+            {
+                "name": Path(result["path"]).name,
+                "path": result["path"],
+                "content": result["content"],
+            }
         )
-        for item in sorted(Path.cwd().iterdir()):
-            if item.is_dir():
-                console.print(f"📁 {item.name}", style="cyan")
-            else:
-                console.print(f"📄 {item.name}", style="green")
 
     @staticmethod
     def detect_intent(prompt: str):
-        return IntentRouter.route(prompt)
+        return IntentRouter.inspect(prompt)
 
     @staticmethod
     def chat_shell():
         console.print(
             Panel.fit(
-                f"Project: {Path.cwd()}\nPermission: {PERMISSION_MODES.get(TerminalHelper.context.current_permission)}\nDisplay Mode: {TerminalHelper.context.display_mode.upper()}\n\nCommands:\n  /help\n  /permission\n  /display\n  /model\n  /exit\n\nModels:\n  Planner  : {TerminalHelper.context.active_models['planner']}\n  Coder    : {TerminalHelper.context.active_models['coder']}\n  Reviewer : {TerminalHelper.context.active_models['reviewer']}\n  Classifier : {TerminalHelper.context.active_models['classifier']}",
+                f"Project: {Path.cwd()}\nPermission Mode: {TerminalHelper.context.current_permission}\nDisplay Mode: {TerminalHelper.context.display_mode.upper()}\n\nAvailable Commands:\n  /help\n  /permission\n  /display\n  /exit",
                 title="Scyther",
                 border_style="cyan",
             )
         )
         print()
+
         while True:
             prompt = input("scyther> ").strip()
             if not prompt:
                 continue
+
             command_result = CommandRouter.route(prompt, TerminalHelper.context)
             if command_result == CommandStatus.EXIT:
                 print("Goodbye")
                 break
             if command_result == CommandStatus.HANDLED:
                 continue
-            if command_result == CommandStatus.NOT_HANDLED:
-                pass
-            if prompt.lower() in [
-                "list files",
-                "list all files",
-                "show files",
-                "show all files",
-                "list all the files inside the folder",
-            ]:
+            if command_result != CommandStatus.NOT_HANDLED:
+                continue
+
+            intent_result = TerminalHelper.detect_intent(prompt)
+            intent = intent_result.intent
+            if intent == "SYSTEM_COMMAND":
+                continue
+            if intent in ["REPO_LIST", "TOOL_ACTION"]:
                 TerminalHelper.list_files()
                 continue
-            intent = TerminalHelper.detect_intent(prompt)
-            if TerminalHelper.context.display_mode == "debug":
-                console.print(
-                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Intent Detection Complete -> {intent}",
-                    style="bright_black",
-                )
-            if intent == "PROJECT_REVIEW":
-                TerminalHelper.review_project()
+            if intent == "REPO_TREE":
+                TerminalHelper.show_tree(max_depth=intent_result.extracted_entities.get("depth"))
                 continue
-            if TerminalHelper.context.display_mode in ["verbose", "debug"]:
-                console.print(f"Detected Intent: {intent}", style="bold cyan")
-            if TerminalHelper.context.display_mode in ["standard", "verbose", "debug"]:
-                console.print(Panel.fit(f"Task: {prompt}", title="Task Summary", border_style="yellow"))
-            if TerminalHelper.context.display_mode in ["verbose", "debug"]:
-                console.print("🟡 Planner active", style="yellow")
-                console.print("🟢 Coder waiting", style="green")
-                console.print("🔵 Processing request", style="cyan")
-                print()
-            if TerminalHelper.context.display_mode == "debug":
-                console.print(
-                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Launching Planner={TerminalHelper.context.active_models['planner']} | Coder={TerminalHelper.context.active_models['coder']}",
-                    style="bright_black",
-                )
-            start_time = datetime.now()
-            process = subprocess.Popen(
-                [
-                    sys.executable,
-                    str(MAIN_FILE),
-                    "edit",
-                    prompt,
-                    "--planner-model",
-                    TerminalHelper.context.active_models["planner"],
-                    "--coder-model",
-                    TerminalHelper.context.active_models["coder"],
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            )
-            for line in process.stdout:
-                if TerminalHelper.context.display_mode == "minimal":
-                    continue
-                line = line.rstrip()
-                if TerminalHelper.context.display_mode == "debug":
-                    line = f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] {line}"
-                if "[Planner]" in line:
-                    console.print(line, style="bold yellow")
-                elif "[Coder]" in line:
-                    console.print(line, style="bold green")
-                elif "[Reviewer]" in line:
-                    console.print(line, style="bold magenta")
-                elif "[Scanner]" in line:
-                    console.print(line, style="bold cyan")
-                elif "[Reader]" in line:
-                    console.print(line, style="blue")
-                elif "[Context]" in line:
-                    console.print(line, style="bright_blue")
+            if intent == "REPO_FIND":
+                parts = prompt.split(maxsplit=2)
+                filename = parts[2] if len(parts) >= 3 else ""
+                if filename:
+                    TerminalHelper.find_file(filename)
+                continue
+            if intent == "REPO_SUMMARY":
+                TerminalHelper.repo_summary()
+                continue
+            if intent == "FILE_READ":
+                filenames = intent_result.extracted_entities.get("filenames", [])
+                filename = filenames[0] if filenames else prompt.split(maxsplit=1)[1] if len(prompt.split(maxsplit=1)) > 1 else ""
+                if filename:
+                    TerminalHelper.read_file(filename)
                 else:
-                    if TerminalHelper.context.display_mode == "debug":
-                        print(line)
-                    elif TerminalHelper.context.display_mode == "verbose":
-                        print(line)
-            process.wait()
+                    FileRenderer.render_error("File not found: ")
+                continue
+
+            console.print(f"Unknown command: {prompt}")
+
             if TerminalHelper.context.display_mode == "debug":
-                duration = (datetime.now() - start_time).total_seconds()
                 console.print(
-                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Process completed in {duration:.2f}s",
+                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] No deterministic task handler available for: {prompt}",
                     style="bright_black",
                 )
-            print()
 
 
 def main():

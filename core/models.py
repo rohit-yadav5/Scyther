@@ -2,6 +2,12 @@ class IntentCategories:
     SYSTEM_COMMAND = "SYSTEM_COMMAND"
     TOOL_ACTION = "TOOL_ACTION"
     FILE_OPERATION = "FILE_OPERATION"
+    REPO_LIST = "REPO_LIST"
+    REPO_TREE = "REPO_TREE"
+    REPO_FIND = "REPO_FIND"
+    REPO_SUMMARY = "REPO_SUMMARY"
+    FILE_READ = "FILE_READ"
+    SEARCH_TEXT = "SEARCH_TEXT"
     PROJECT_REVIEW = "PROJECT_REVIEW"
     PROJECT_QA = "PROJECT_QA"
     CODE_CHANGE = "CODE_CHANGE"
@@ -16,10 +22,8 @@ class CommandStatus:
 
 
 class RuntimeContext:
-    def __init__(self, console, current_permission, display_mode, active_models, base_dir, main_file):
+    def __init__(self, console, current_permission, display_mode, base_dir):
         self.console = console
         self.current_permission = current_permission
         self.display_mode = display_mode
-        self.active_models = active_models
         self.base_dir = base_dir
-        self.main_file = main_file
