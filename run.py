@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 from rich.console import Console
 from rich.panel import Panel
+from datetime import datetime
 
 PERMISSION_MODES = {
     "1": "Read + Write (Current Directory)",
@@ -22,7 +23,7 @@ PERMISSION_MODES = {
     "6": "Full Read + Write (Anywhere) [DANGER]",
 }
 
-CURRENT_PERMISSION = None
+CURRENT_PERMISSION = "3"
 
 DISPLAY_MODE = "standard"
 
@@ -30,6 +31,7 @@ ACTIVE_MODELS = {
     "planner": "qwen3:8b",
     "coder": "qwen2.5-coder:7b",
     "reviewer": "qwen3:8b",
+    "classifier": "qwen3.5:0.8b",
 }
 
 BASE_DIR = Path(__file__).parent
@@ -136,7 +138,8 @@ class TerminalHelper:
         console.print("1. Planner")
         console.print("2. Coder")
         console.print("3. Reviewer")
-        console.print("4. All Models")
+        console.print("4. Classifier")
+        console.print("5. All Models")
 
         target = input("Target: ").strip()
         choice = input("Model number: ").strip()
@@ -153,6 +156,8 @@ class TerminalHelper:
         elif target == "3":
             ACTIVE_MODELS["reviewer"] = selected_model
         elif target == "4":
+            ACTIVE_MODELS["classifier"] = selected_model
+        elif target == "5":
             ACTIVE_MODELS["planner"] = selected_model
             ACTIVE_MODELS["coder"] = selected_model
             ACTIVE_MODELS["reviewer"] = selected_model
@@ -163,7 +168,8 @@ class TerminalHelper:
             Panel.fit(
                 f"Planner : {ACTIVE_MODELS['planner']}\n"
                 f"Coder : {ACTIVE_MODELS['coder']}\n"
-                f"Reviewer : {ACTIVE_MODELS['reviewer']}",
+                f"Reviewer : {ACTIVE_MODELS['reviewer']}\n"
+                f"Classifier : {ACTIVE_MODELS['classifier']}",
                 title="Active Models",
                 border_style="yellow",
             )
@@ -171,6 +177,12 @@ class TerminalHelper:
 
     @staticmethod
     def review_project():
+        start_time = datetime.now()
+        if DISPLAY_MODE == "debug":
+            console.print(
+                f"[{start_time.strftime('%H:%M:%S.%f')[:-3]}] Launching review on {Path.cwd()}",
+                style="bright_black",
+            )
         process = subprocess.Popen(
             [
                 sys.executable,
@@ -189,6 +201,10 @@ class TerminalHelper:
                 continue
 
             line = line.rstrip()
+
+            if DISPLAY_MODE == "debug":
+                timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+                line = f"[{timestamp}] {line}"
 
             if "[Planner]" in line:
                 console.print(line, style="bold yellow")
@@ -209,6 +225,12 @@ class TerminalHelper:
                     print(line)
 
         process.wait()
+        if DISPLAY_MODE == "debug":
+            duration = (datetime.now() - start_time).total_seconds()
+            console.print(
+                f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Review completed in {duration:.2f}s",
+                style="bright_black",
+            )
 
         if DISPLAY_MODE == "minimal":
             console.print(
@@ -227,6 +249,7 @@ class TerminalHelper:
             print("Task cannot be empty")
             return
 
+        start_time = datetime.now()
         print("\n[Scyther] Creating implementation plan...")
         print("[Scyther] Planner agent started...")
         print("[Scyther] Waiting for coding model...\n")
@@ -255,6 +278,12 @@ class TerminalHelper:
             print(line, end="")
 
         process.wait()
+        if DISPLAY_MODE == "debug":
+            duration = (datetime.now() - start_time).total_seconds()
+            console.print(
+                f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Edit completed in {duration:.2f}s",
+                style="bright_black",
+            )
 
         if DISPLAY_MODE == "minimal":
             console.print(
@@ -264,7 +293,7 @@ class TerminalHelper:
                     border_style="green",
                 )
             )
-
+    
     @staticmethod
     def list_files():
         console.print(
@@ -285,7 +314,7 @@ class TerminalHelper:
     def chat_shell():
         console.print(
             Panel.fit(
-                f"Project: {Path.cwd()}\nPermission: {PERMISSION_MODES.get(CURRENT_PERMISSION)}\nDisplay Mode: {DISPLAY_MODE.upper()}\n\nCommands:\n  /help\n  /permission\n  /display\n  /model\n  /exit\n\nModels:\n  Planner  : {ACTIVE_MODELS['planner']}\n  Coder    : {ACTIVE_MODELS['coder']}\n  Reviewer : {ACTIVE_MODELS['reviewer']}",
+                f"Project: {Path.cwd()}\nPermission: {PERMISSION_MODES.get(CURRENT_PERMISSION)}\nDisplay Mode: {DISPLAY_MODE.upper()}\n\nCommands:\n  /help\n  /permission\n  /display\n  /model\n  /exit\n\nModels:\n  Planner  : {ACTIVE_MODELS['planner']}\n  Coder    : {ACTIVE_MODELS['coder']}\n  Reviewer : {ACTIVE_MODELS['reviewer']}\n  Classifier : {ACTIVE_MODELS['classifier']}",
                 title="Scyther",
                 border_style="cyan",
             )
@@ -334,9 +363,22 @@ class TerminalHelper:
                 TerminalHelper.list_files()
                 continue
 
-            if prompt.lower() == "review":
+            intent = TerminalHelper.detect_intent(prompt)
+            if DISPLAY_MODE == "debug":
+                console.print(
+                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Intent Detection Complete -> {intent}",
+                    style="bright_black",
+                )
+
+            if intent == "PROJECT_REVIEW":
                 TerminalHelper.review_project()
                 continue
+
+            if DISPLAY_MODE in ["verbose", "debug"]:
+                console.print(
+                    f"Detected Intent: {intent}",
+                    style="bold cyan",
+                )
 
             task = prompt
 
@@ -355,6 +397,12 @@ class TerminalHelper:
                 console.print("🔵 Processing request", style="cyan")
                 print()
 
+            if DISPLAY_MODE == "debug":
+                console.print(
+                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Launching Planner={ACTIVE_MODELS['planner']} | Coder={ACTIVE_MODELS['coder']}",
+                    style="bright_black",
+                )
+            start_time = datetime.now()
             process = subprocess.Popen(
                 [
                     sys.executable,
@@ -377,6 +425,9 @@ class TerminalHelper:
                     continue
 
                 line = line.rstrip()
+                if DISPLAY_MODE == "debug":
+                    timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+                    line = f"[{timestamp}] {line}"
 
                 if "[Planner]" in line:
                     console.print(line, style="bold yellow")
@@ -397,6 +448,12 @@ class TerminalHelper:
                         print(line)
 
             process.wait()
+            if DISPLAY_MODE == "debug":
+                duration = (datetime.now() - start_time).total_seconds()
+                console.print(
+                    f"[{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] Process completed in {duration:.2f}s",
+                    style="bright_black",
+                )
 
             if DISPLAY_MODE == "minimal":
                 console.print(
@@ -408,11 +465,69 @@ class TerminalHelper:
                 )
             print()
 
+    @staticmethod
+    def detect_intent(prompt: str):
+        text = prompt.lower().strip()
+
+        tool_patterns = [
+            "list files",
+            "show files",
+            "show directory",
+            "current directory",
+            "pwd",
+        ]
+
+        review_patterns = [
+            "review",
+            "find bugs",
+            "audit",
+            "security review",
+            "performance review",
+        ]
+
+        file_patterns = [
+            "open ",
+            "read ",
+            "show file",
+        ]
+
+        if any(x in text for x in tool_patterns):
+            return "TOOL_ACTION"
+
+        if any(x in text for x in review_patterns):
+            return "PROJECT_REVIEW"
+
+        if any(x in text for x in file_patterns):
+            return "FILE_OPERATION"
+
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(MAIN_FILE),
+                    "classify",
+                    prompt,
+                    "--classifier-model",
+                    ACTIVE_MODELS["classifier"],
+                ],
+                capture_output=True,
+                text=True,
+            )
+        except Exception:
+            return "UNKNOWN"
+
+        if result.returncode != 0:
+            return "UNKNOWN"
+
+        output = result.stdout.strip().splitlines()
+        if not output:
+            return "UNKNOWN"
+
+        intent = output[-1].strip().upper()
+        return intent if intent else "UNKNOWN"
+
 
 def main():
-    if CURRENT_PERMISSION is None:
-        TerminalHelper.select_permissions()
-
     TerminalHelper.chat_shell()
 
 
