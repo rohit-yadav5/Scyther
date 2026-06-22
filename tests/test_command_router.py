@@ -12,9 +12,29 @@ class DummyConsole:
 
 
 class DummyContext:
-    console = DummyConsole()
-    current_permission = "3"
-    display_mode = "standard"
+    def __init__(self, project_root=None):
+        self.console = DummyConsole()
+        self.current_permission = "3"
+        self.display_mode = "standard"
+        self._project_root = project_root
+        self._config = None
+
+    @property
+    def project_root(self):
+        return self._project_root
+
+    @project_root.setter
+    def project_root(self, value):
+        self._project_root = value
+        from services.config_service import ConfigService
+        self._config = ConfigService(str(value))
+
+    @property
+    def config(self):
+        if self._config is None:
+            from services.config_service import ConfigService
+            self._config = ConfigService(str(self._project_root or "."))
+        return self._config
 
 
 def test_slash_commands_route_to_expected_status(monkeypatch, tmp_path):

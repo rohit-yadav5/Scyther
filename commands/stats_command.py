@@ -7,7 +7,7 @@ class StatsCommand:
 
     @staticmethod
     def execute(args: tuple, context) -> CommandStatus:
-        service = RepoService(str(context.project_root))
+        service = RepoService(str(context.project_root), config=context.config)
 
         try:
             stats = service.get_stats()

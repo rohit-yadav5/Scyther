@@ -12,7 +12,7 @@ def test_command_registry_completeness():
 
 def test_command_registry_metadata_schema():
     """Verify that all commands in the registry have correct keys and types."""
-    valid_categories = {"Repository", "Modification", "Git", "System"}
+    valid_categories = {"Repository", "Modification", "Git", "Release", "System"}
     
     for cmd_name, info in COMMANDS.items():
         assert isinstance(info, dict), f"{cmd_name} metadata must be a dictionary"

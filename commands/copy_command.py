@@ -12,7 +12,7 @@ class CopyCommand:
             return CommandStatus.HANDLED
 
         source, destination = args
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             rel_dest = service.copy_path(source, destination)

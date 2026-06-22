@@ -12,22 +12,21 @@ class FileService:
     directories (.git, .venv, __pycache__, etc.) are never returned.
     """
 
-    def __init__(self, root_path: str):
+    def __init__(self, root_path: str, config=None):
         self.root_path = Path(root_path).resolve()
+        self.config = config
+        ignored = config.ignored_dirs if config else IGNORED_DIRS
+        from services.path_service import PathService
+        self.path_service = PathService(str(self.root_path), ignored)
         self.file_tool = FileTool
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _is_ignored(path: Path, root: Path) -> bool:
-        """Return True if any relative segment of *path* is in IGNORED_DIRS."""
-        try:
-            relative = path.relative_to(root)
-            return any(part in IGNORED_DIRS for part in relative.parts)
-        except ValueError:
-            return True  # path escapes root — always ignored
+    def _is_ignored(self, path: Path, root: Path) -> bool:
+        """Return True if any relative segment of *path* is in ignored directories."""
+        return self.path_service.is_ignored(path)
 
     def _resolve_file(self, filename: str) -> list[Path]:
         """Resolve *filename* to matching absolute paths inside the project root.
@@ -95,31 +94,13 @@ class FileService:
         }
 
     def _resolve_mutation_path(self, path_str: str) -> Path:
-        """Resolve a path for mutation, enforcing root boundary and IGNORED_DIRS.
+        """Resolve a path for mutation, enforcing root boundary and ignored directories.
 
         Raises:
             PermissionError: If the target path escapes the project root or
                              falls inside an ignored directory.
         """
-        target_path = Path(path_str)
-        if not target_path.is_absolute():
-            target_path = (self.root_path / target_path).resolve()
-        else:
-            target_path = target_path.resolve()
-
-        # Enforce project root boundary
-        if not target_path.is_relative_to(self.root_path):
-            raise PermissionError(f"Access denied: path '{path_str}' is outside project root.")
-
-        # Enforce ignored directories
-        try:
-            relative = target_path.relative_to(self.root_path)
-            if any(part in IGNORED_DIRS for part in relative.parts):
-                raise PermissionError(f"Access denied: path '{path_str}' is inside an ignored directory.")
-        except ValueError:
-            raise PermissionError(f"Access denied: path '{path_str}' is outside project root.")
-
-        return target_path
+        return self.path_service.resolve_and_validate(path_str, check_ignored=True)
 
     def write(self, path: str, content: str) -> str:
         """Writes content to path, enforcing safety boundaries. Included for backwards compatibility."""

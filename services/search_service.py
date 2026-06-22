@@ -4,6 +4,9 @@ from core.config import IGNORED_DIRS
 
 
 class SearchService:
+    def __init__(self, config=None):
+        self.config = config
+        self.ignored_dirs = config.ignored_dirs if config else IGNORED_DIRS
     """Project-scoped content search.
 
     Searches for a literal string pattern in all readable files within
@@ -30,7 +33,7 @@ class SearchService:
                 relative = path.relative_to(root_path)
             except ValueError:
                 continue
-            if any(part in IGNORED_DIRS for part in relative.parts):
+            if any(part in self.ignored_dirs for part in relative.parts):
                 continue
 
             # Read and scan line by line
@@ -65,7 +68,7 @@ class SearchService:
                 relative = path.relative_to(root_path)
             except ValueError:
                 continue
-            if any(part in IGNORED_DIRS for part in relative.parts):
+            if any(part in self.ignored_dirs for part in relative.parts):
                 continue
 
             try:

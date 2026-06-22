@@ -13,7 +13,7 @@ class SearchCommand:
             return CommandStatus.HANDLED
 
         pattern = " ".join(args)
-        service = SearchService()
+        service = SearchService(config=context.config)
         matches = service.search(str(context.project_root), pattern)
 
         SearchRenderer.render(matches, pattern, context)

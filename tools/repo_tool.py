@@ -5,37 +5,34 @@ from core.config import IGNORED_DIRS
 
 class RepoTool:
     @classmethod
-    def _should_ignore(cls, path: Path, root: Path) -> bool:
-        """Return True if any relative segment of *path* is in IGNORED_DIRS.
-
-        Uses the path relative to *root* so that the project root directory
-        itself is never accidentally excluded (e.g. if the project lives inside
-        a directory named 'build' or 'dist').
-        """
+    def _should_ignore(cls, path: Path, root: Path, ignored_dirs=None) -> bool:
+        """Return True if any relative segment of *path* is in ignored directories."""
+        if ignored_dirs is None:
+            ignored_dirs = IGNORED_DIRS
         try:
             relative = path.relative_to(root)
-            return any(part in IGNORED_DIRS for part in relative.parts)
+            return any(part in ignored_dirs for part in relative.parts)
         except ValueError:
             return True  # path escapes root — always ignore
 
     @classmethod
-    def _walk(cls, root_path: str):
+    def _walk(cls, root_path: str, ignored_dirs=None):
         root = Path(root_path).resolve()
         for path in root.rglob("*"):
-            if cls._should_ignore(path, root):
+            if cls._should_ignore(path, root, ignored_dirs):
                 continue
             yield root, path
 
     @classmethod
-    def list_files(cls, root_path: str):
+    def list_files(cls, root_path: str, ignored_dirs=None):
         files = []
-        for _, path in cls._walk(root_path):
+        for _, path in cls._walk(root_path, ignored_dirs):
             if path.is_file():
                 files.append(path.relative_to(Path(root_path).resolve()).as_posix())
         return sorted(files)
 
     @classmethod
-    def tree(cls, root_path: str, max_depth: int | None = None):
+    def tree(cls, root_path: str, max_depth: int | None = None, ignored_dirs=None):
         root = Path(root_path).resolve()
         directories: set[str] = set()
         files: list[str] = []
@@ -48,7 +45,7 @@ class RepoTool:
             visible_children = [
                 child
                 for child in sorted(path.iterdir(), key=lambda item: (item.is_file(), item.name.lower()))
-                if not cls._should_ignore(child, root)
+                if not cls._should_ignore(child, root, ignored_dirs)
             ]
 
             for child in visible_children:
@@ -88,20 +85,20 @@ class RepoTool:
         }
 
     @classmethod
-    def find_file(cls, root_path: str, filename: str):
+    def find_file(cls, root_path: str, filename: str, ignored_dirs=None):
         matches = []
-        for _, path in cls._walk(root_path):
+        for _, path in cls._walk(root_path, ignored_dirs):
             if path.is_file() and path.name == filename:
                 matches.append(path.relative_to(Path(root_path).resolve()).as_posix())
         return sorted(matches)
 
     @classmethod
-    def count_files(cls, root_path: str):
+    def count_files(cls, root_path: str, ignored_dirs=None):
         root = Path(root_path).resolve()
         file_count = 0
         directories: set[str] = set()
 
-        for _, path in cls._walk(root_path):
+        for _, path in cls._walk(root_path, ignored_dirs):
             relative = path.relative_to(root)
             if path.is_file():
                 file_count += 1
@@ -119,7 +116,7 @@ class RepoTool:
         }
 
     @classmethod
-    def stats(cls, root_path: str):
+    def stats(cls, root_path: str, ignored_dirs=None):
         root = Path(root_path).resolve()
         file_count = 0
         directories: set[str] = set()
@@ -131,7 +128,7 @@ class RepoTool:
         largest_file_size = 0
         total_size = 0
 
-        for _, path in cls._walk(root_path):
+        for _, path in cls._walk(root_path, ignored_dirs):
             relative = path.relative_to(root)
             if path.is_file():
                 file_count += 1
@@ -175,11 +172,11 @@ class RepoTool:
         }
 
     @classmethod
-    def recent_files(cls, root_path: str, limit: int = 20) -> list[dict]:
+    def recent_files(cls, root_path: str, limit: int = 20, ignored_dirs=None) -> list[dict]:
         root = Path(root_path).resolve()
         files_with_mtime = []
 
-        for _, path in cls._walk(root_path):
+        for _, path in cls._walk(root_path, ignored_dirs):
             if path.is_file():
                 try:
                     mtime = path.stat().st_mtime

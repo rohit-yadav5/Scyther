@@ -12,7 +12,7 @@ class CreateCommand:
             return CommandStatus.HANDLED
 
         filename = " ".join(args)
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             relative_path = service.create_file(filename)

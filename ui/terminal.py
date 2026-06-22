@@ -13,6 +13,7 @@ class Shell:
         self.context = context
 
     def start(self) -> None:
+        from core.version import __version__
         from core.command_registry import COMMANDS
         from permissions.access_control import AccessControl
 
@@ -20,17 +21,17 @@ class Shell:
         display_mode_str = self.context.display_mode.capitalize()
         total_commands = len(COMMANDS)
 
-        console.print(
+        self.context.console.print(
             Panel.fit(
-                f"Project: {Path.cwd()}"
+                f"Project: {self.context.project_root}"
                 f"\nPermission: {permission_behavior}"
                 f"\nDisplay: {display_mode_str}"
                 f"\nCommands: {total_commands}",
-                title="Scyther",
+                title=f"Scyther v{__version__}",
                 border_style="cyan",
             )
         )
-        print()
+        self.context.console.print()
 
         while True:
             prompt = input("scyther> ").strip()
@@ -39,13 +40,13 @@ class Shell:
 
             command_result = CommandRouter.route(prompt, self.context)
             if command_result == CommandStatus.EXIT:
-                print("Goodbye")
+                self.context.console.print("Goodbye")
                 break
             if command_result == CommandStatus.HANDLED:
                 continue
 
             # All unrecognized input is rejected.
             # Commands must start with "/" — use /help to see available commands.
-            console.print(
+            self.context.console.print(
                 "Unknown command. Type [bold]/help[/bold] for available commands."
             )

@@ -12,10 +12,10 @@ class RecentCommand:
             try:
                 limit = int(args[0])
             except ValueError:
-                context.console.print("[red]Usage: /recent [limit][/red]")
+                context.console.print("[red]Usage: /recent \\[limit][/red]")
                 return CommandStatus.HANDLED
 
-        service = RepoService(str(context.project_root))
+        service = RepoService(str(context.project_root), config=context.config)
 
         try:
             recent_files = service.get_recent_files(limit)

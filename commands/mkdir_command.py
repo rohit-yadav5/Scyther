@@ -12,7 +12,7 @@ class MkdirCommand:
             return CommandStatus.HANDLED
 
         dirname = " ".join(args)
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             relative_path = service.create_directory(dirname)

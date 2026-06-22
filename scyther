@@ -1,2 +1,3 @@
 #!/bin/bash
-/Users/rohit/code_personal/Scyther/.venv/bin/python /Users/rohit/code_personal/Scyther/run.py
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+"$DIR/.venv/bin/python" "$DIR/run.py" "$@"

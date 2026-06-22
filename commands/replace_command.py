@@ -12,7 +12,7 @@ class ReplaceCommand:
             return CommandStatus.HANDLED
 
         filename, old_text, new_text = args
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             count = service.replace_text(filename, old_text, new_text)

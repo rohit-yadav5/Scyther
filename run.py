@@ -16,7 +16,7 @@ def main():
         console=console,
         current_permission=CURRENT_PERMISSION,
         display_mode=DISPLAY_MODE,
-        project_root=BASE_DIR,
+        project_root=Path.cwd().resolve(),
     )
     shell = Shell(context)
     shell.start()

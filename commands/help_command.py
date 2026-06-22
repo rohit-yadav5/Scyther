@@ -33,6 +33,7 @@ class HelpCommand:
             "Repository": [],
             "Modification": [],
             "Git": [],
+            "Release": [],
             "System": [],
         }
         for name, info in COMMANDS.items():
@@ -65,6 +66,8 @@ class HelpCommand:
                 border_style = "yellow"
             elif cat_name == "Git":
                 border_style = "magenta"
+            elif cat_name == "Release":
+                border_style = "blue"
             elif cat_name == "System":
                 border_style = "green"
                 

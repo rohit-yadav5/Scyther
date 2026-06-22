@@ -18,7 +18,7 @@ class DeleteCommand:
             return CommandStatus.HANDLED
 
         path_str = " ".join(target_args)
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             service.delete_path(path_str, recursive=recursive)

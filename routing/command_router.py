@@ -21,6 +21,14 @@ from commands.git_status_command import GitStatusCommand
 from commands.git_diff_command import GitDiffCommand
 from commands.recent_command import RecentCommand
 from commands.todo_command import TodoCommand
+from commands.where_command import WhereCommand
+from commands.refs_command import RefsCommand
+from commands.deps_command import DepsCommand
+from commands.largest_command import LargestCommand
+from commands.about_command import AboutCommand
+from commands.version_command import VersionCommand
+from commands.doctor_command import DoctorCommand
+from commands.config_command import ConfigCommand
 from core.models import CommandStatus
 from routing.parser import Parser
 
@@ -51,6 +59,14 @@ _REGISTRY = {
     "/git-diff":   GitDiffCommand,
     "/recent":     RecentCommand,
     "/todo":       TodoCommand,
+    "/where":      WhereCommand,
+    "/refs":       RefsCommand,
+    "/deps":       DepsCommand,
+    "/largest":    LargestCommand,
+    "/about":      AboutCommand,
+    "/version":    VersionCommand,
+    "/doctor":     DoctorCommand,
+    "/config":     ConfigCommand,
 }
 
 

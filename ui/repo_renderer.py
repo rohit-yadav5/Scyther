@@ -43,3 +43,22 @@ class RepoRenderer:
         console.print(f"Repository Root: {summary['root']}")
         console.print(f"Files: {summary['files']}")
         console.print(f"Directories: {summary['directories']}")
+
+    @staticmethod
+    def render_largest(largest_files: list[dict], context) -> None:
+        if not largest_files:
+            context.console.print("No files found in repository.")
+            return
+
+        def format_size(size_in_bytes: int) -> str:
+            if size_in_bytes >= 1024 * 1024:
+                return f"{size_in_bytes / (1024 * 1024):.1f} MB"
+            elif size_in_bytes >= 1024:
+                return f"{size_in_bytes / 1024:.1f} KB"
+            else:
+                return f"{size_in_bytes} B"
+
+        for idx, item in enumerate(largest_files, 1):
+            path = item["path"]
+            size_str = format_size(item["size"])
+            context.console.print(f"{idx}. {path:<40} {size_str:>8}")

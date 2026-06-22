@@ -10,7 +10,7 @@ class TodoCommand:
 
     @staticmethod
     def execute(args: tuple, context) -> CommandStatus:
-        service = SearchService()
+        service = SearchService(config=context.config)
 
         try:
             results = service.todo(str(context.project_root))

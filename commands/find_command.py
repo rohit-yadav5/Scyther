@@ -12,7 +12,7 @@ class FindCommand:
             return CommandStatus.HANDLED
 
         filename = " ".join(args)
-        service = RepoService(str(context.project_root))
+        service = RepoService(str(context.project_root), config=context.config)
         matches = service.find_file(filename)
 
         if matches:

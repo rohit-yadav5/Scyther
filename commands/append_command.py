@@ -13,7 +13,7 @@ class AppendCommand:
 
         filename = args[0]
         content = " ".join(args[1:])
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             relative_path = service.append_file(filename, content)

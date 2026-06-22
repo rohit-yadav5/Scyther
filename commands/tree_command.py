@@ -17,8 +17,10 @@ class TreeCommand:
                     f"[red]Invalid depth: '{args[0]}'. Usage: /tree [depth][/red]"
                 )
                 return CommandStatus.HANDLED
+        else:
+            max_depth = context.config.get("default_tree_depth", 3)
 
-        service = RepoService(str(context.project_root))
+        service = RepoService(str(context.project_root), config=context.config)
         tree = service.show_tree(max_depth=max_depth)
         RepoRenderer.render_tree(tree)
         return CommandStatus.HANDLED

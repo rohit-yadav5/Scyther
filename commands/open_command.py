@@ -16,7 +16,7 @@ class OpenCommand:
 
         # Join args to support filenames with spaces, e.g. /open my notes.txt
         filename = " ".join(args)
-        service = FileService(str(context.project_root))
+        service = FileService(str(context.project_root), config=context.config)
 
         try:
             result = service.read_file(filename)

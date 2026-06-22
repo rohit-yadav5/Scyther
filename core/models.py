@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 class MultipleMatchesError(Exception):
     """Raised when a filename resolves to more than one file within the project root.
 
@@ -39,3 +41,18 @@ class RuntimeContext:
         self.current_permission = current_permission
         self.display_mode = display_mode
         self.project_root = project_root
+        from services.config_service import ConfigService
+        self.config = ConfigService(str(self.project_root))
+
+
+@dataclass(slots=True)
+class SymbolLocation:
+    path: str
+    line: int
+    symbol: str
+
+
+@dataclass(slots=True)
+class FileDependency:
+    source: str
+    target: str
