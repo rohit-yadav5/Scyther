@@ -1,6 +1,6 @@
 import pytest
 
-from routing.parser import ParsedCommand, Parser
+from scyther.routing.parser import ParsedCommand, Parser
 
 
 def test_simple_slash_command():

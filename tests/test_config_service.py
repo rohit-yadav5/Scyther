@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from services.config_service import ConfigService
+from scyther.services.config_service import ConfigService
 
 
 def test_config_service_defaults(tmp_path):

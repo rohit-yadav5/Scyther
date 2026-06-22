@@ -15,19 +15,19 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.display_command import DisplayCommand
-from commands.exit_command import ExitCommand
-from commands.find_command import FindCommand
-from commands.help_command import HelpCommand
-from commands.list_command import ListCommand
-from commands.open_command import OpenCommand
-from commands.permission_command import PermissionCommand
-from commands.summary_command import SummaryCommand
-from commands.tree_command import TreeCommand
-from core.models import CommandStatus, MultipleMatchesError, RuntimeContext
-from routing.command_router import CommandRouter
-from services.file_service import FileService
-from tools.repo_tool import RepoTool
+from scyther.commands.display_command import DisplayCommand
+from scyther.commands.exit_command import ExitCommand
+from scyther.commands.find_command import FindCommand
+from scyther.commands.help_command import HelpCommand
+from scyther.commands.list_command import ListCommand
+from scyther.commands.open_command import OpenCommand
+from scyther.commands.permission_command import PermissionCommand
+from scyther.commands.summary_command import SummaryCommand
+from scyther.commands.tree_command import TreeCommand
+from scyther.core.models import CommandStatus, MultipleMatchesError, RuntimeContext
+from scyther.routing.command_router import CommandRouter
+from scyther.services.file_service import FileService
+from scyther.tools.repo_tool import RepoTool
 
 
 # ---------------------------------------------------------------------------

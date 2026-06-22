@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
-from core.errors import PermissionDeniedError
-from services.path_service import PathService
+from scyther.core.errors import PermissionDeniedError
+from scyther.services.path_service import PathService
 
 
 def test_path_service_normalize(tmp_path):

@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.replace_command import ReplaceCommand
-from core.models import CommandStatus, RuntimeContext
-from routing.command_router import CommandRouter
+from scyther.commands.replace_command import ReplaceCommand
+from scyther.core.models import CommandStatus, RuntimeContext
+from scyther.routing.command_router import CommandRouter
 
 
 def make_context(base_dir: Path) -> RuntimeContext:

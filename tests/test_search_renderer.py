@@ -3,8 +3,8 @@ from pathlib import Path
 
 from rich.console import Console
 
-from core.models import RuntimeContext
-from ui.search_renderer import SearchRenderer
+from scyther.core.models import RuntimeContext
+from scyther.ui.search_renderer import SearchRenderer
 
 
 def make_test_context(color: bool = False) -> RuntimeContext:

@@ -1,4 +1,4 @@
-from tools.repo_tool import RepoTool
+from scyther.tools.repo_tool import RepoTool
 
 
 def build_repo(root):

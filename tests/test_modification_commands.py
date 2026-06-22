@@ -4,12 +4,12 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.create_command import CreateCommand
-from commands.mkdir_command import MkdirCommand
-from commands.write_command import WriteCommand
-from commands.append_command import AppendCommand
-from core.models import CommandStatus, RuntimeContext
-from routing.command_router import CommandRouter
+from scyther.commands.create_command import CreateCommand
+from scyther.commands.mkdir_command import MkdirCommand
+from scyther.commands.write_command import WriteCommand
+from scyther.commands.append_command import AppendCommand
+from scyther.core.models import CommandStatus, RuntimeContext
+from scyther.routing.command_router import CommandRouter
 
 
 def make_context(base_dir: Path) -> RuntimeContext:

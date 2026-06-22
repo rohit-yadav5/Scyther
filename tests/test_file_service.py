@@ -1,6 +1,6 @@
 import pytest
 
-from services.file_service import FileService
+from scyther.services.file_service import FileService
 
 
 def test_read_existing_file(tmp_path):

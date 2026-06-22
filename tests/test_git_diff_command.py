@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.git_diff_command import GitDiffCommand
-from core.models import CommandStatus, RuntimeContext
-from tools.git_tool import GitTool
+from scyther.commands.git_diff_command import GitDiffCommand
+from scyther.core.models import CommandStatus, RuntimeContext
+from scyther.tools.git_tool import GitTool
 
 
 def make_context(base_dir: Path) -> RuntimeContext:

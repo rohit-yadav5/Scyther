@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 
-from core.models import SymbolLocation, FileDependency
-from services.code_index_service import CodeIndexService
+from scyther.core.models import SymbolLocation, FileDependency
+from scyther.services.code_index_service import CodeIndexService
 
 
 @pytest.fixture

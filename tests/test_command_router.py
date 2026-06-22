@@ -1,9 +1,9 @@
 import pytest
 
-from commands.display_command import DisplayCommand
-from commands.permission_command import PermissionCommand
-from core.models import CommandStatus
-from routing.command_router import CommandRouter
+from scyther.commands.display_command import DisplayCommand
+from scyther.commands.permission_command import PermissionCommand
+from scyther.core.models import CommandStatus
+from scyther.routing.command_router import CommandRouter
 
 
 class DummyConsole:
@@ -26,13 +26,13 @@ class DummyContext:
     @project_root.setter
     def project_root(self, value):
         self._project_root = value
-        from services.config_service import ConfigService
+        from scyther.services.config_service import ConfigService
         self._config = ConfigService(str(value))
 
     @property
     def config(self):
         if self._config is None:
-            from services.config_service import ConfigService
+            from scyther.services.config_service import ConfigService
             self._config = ConfigService(str(self._project_root or "."))
         return self._config
 

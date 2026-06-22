@@ -1,6 +1,6 @@
 import pytest
 
-from services.repository_stats_service import RepositoryStatsService
+from scyther.services.repository_stats_service import RepositoryStatsService
 
 
 def test_get_largest_files(tmp_path):

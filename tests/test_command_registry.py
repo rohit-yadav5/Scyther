@@ -1,5 +1,5 @@
-from routing.command_router import _REGISTRY
-from core.command_registry import COMMANDS
+from scyther.routing.command_router import _REGISTRY
+from scyther.core.command_registry import COMMANDS
 
 
 def test_command_registry_completeness():

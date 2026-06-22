@@ -1,4 +1,4 @@
-from services.repo_service import RepoService
+from scyther.services.repo_service import RepoService
 
 
 def test_repo_service_list_files(tmp_path):

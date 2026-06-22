@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.largest_command import LargestCommand
-from core.models import CommandStatus, RuntimeContext
+from scyther.commands.largest_command import LargestCommand
+from scyther.core.models import CommandStatus, RuntimeContext
 
 
 def make_context(base_dir: Path) -> RuntimeContext:

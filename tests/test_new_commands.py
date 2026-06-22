@@ -13,13 +13,13 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.find_command import FindCommand
-from commands.list_command import ListCommand
-from commands.open_command import OpenCommand
-from commands.summary_command import SummaryCommand
-from commands.tree_command import TreeCommand
-from commands.exit_command import ExitCommand
-from core.models import CommandStatus, RuntimeContext
+from scyther.commands.find_command import FindCommand
+from scyther.commands.list_command import ListCommand
+from scyther.commands.open_command import OpenCommand
+from scyther.commands.summary_command import SummaryCommand
+from scyther.commands.tree_command import TreeCommand
+from scyther.commands.exit_command import ExitCommand
+from scyther.core.models import CommandStatus, RuntimeContext
 
 
 # ---------------------------------------------------------------------------

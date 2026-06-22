@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from commands.recent_command import RecentCommand
-from core.models import CommandStatus, RuntimeContext
+from scyther.commands.recent_command import RecentCommand
+from scyther.core.models import CommandStatus, RuntimeContext
 
 
 def make_context(base_dir: Path) -> RuntimeContext:

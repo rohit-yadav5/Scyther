@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from tools.edit_tool import EditTool
+from scyther.tools.edit_tool import EditTool
 
 
 def test_replace_text_success(tmp_path):

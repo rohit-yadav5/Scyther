@@ -1,6 +1,6 @@
 import pytest
 
-from tools.file_tool import FileTool
+from scyther.tools.file_tool import FileTool
 
 
 def test_read_existing_file(tmp_path):
