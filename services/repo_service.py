@@ -21,3 +21,9 @@ class RepoService:
 
     def repo_summary(self):
         return self.repo_tool.count_files(self.root_path)
+
+    def get_stats(self):
+        return self.repo_tool.stats(self.root_path)
+
+    def get_recent_files(self, limit: int = 20) -> list[dict]:
+        return self.repo_tool.recent_files(self.root_path, limit)

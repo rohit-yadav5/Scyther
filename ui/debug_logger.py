@@ -2,13 +2,11 @@ from datetime import datetime
 
 from rich.console import Console
 
-from core.config import DISPLAY_MODE
-
 console = Console()
 
 
-def debug_log(message: str):
-    if DISPLAY_MODE != "debug":
+def debug_log(message: str, context):
+    if context.display_mode != "debug":
         return
 
     timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]

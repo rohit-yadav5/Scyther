@@ -1,0 +1,20 @@
+from core.models import CommandStatus
+from services.search_service import SearchService
+from ui.search_renderer import SearchRenderer
+
+
+class SearchCommand:
+    """/search <pattern> — search for a text pattern across all project files."""
+
+    @staticmethod
+    def execute(args: tuple, context) -> CommandStatus:
+        if not args:
+            context.console.print("[red]Usage: /search <pattern>[/red]")
+            return CommandStatus.HANDLED
+
+        pattern = " ".join(args)
+        service = SearchService()
+        matches = service.search(str(context.project_root), pattern)
+
+        SearchRenderer.render(matches, pattern, context)
+        return CommandStatus.HANDLED

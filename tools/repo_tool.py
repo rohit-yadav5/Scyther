@@ -1,18 +1,28 @@
 from pathlib import Path
 
+from core.config import IGNORED_DIRS
+
 
 class RepoTool:
-    IGNORED_DIRS = {".git", ".venv", "node_modules", "dist", "build", "__pycache__", "pycache"}
-
     @classmethod
-    def _should_ignore(cls, path: Path) -> bool:
-        return any(part in cls.IGNORED_DIRS for part in path.parts)
+    def _should_ignore(cls, path: Path, root: Path) -> bool:
+        """Return True if any relative segment of *path* is in IGNORED_DIRS.
+
+        Uses the path relative to *root* so that the project root directory
+        itself is never accidentally excluded (e.g. if the project lives inside
+        a directory named 'build' or 'dist').
+        """
+        try:
+            relative = path.relative_to(root)
+            return any(part in IGNORED_DIRS for part in relative.parts)
+        except ValueError:
+            return True  # path escapes root — always ignore
 
     @classmethod
     def _walk(cls, root_path: str):
         root = Path(root_path).resolve()
         for path in root.rglob("*"):
-            if cls._should_ignore(path):
+            if cls._should_ignore(path, root):
                 continue
             yield root, path
 
@@ -27,18 +37,18 @@ class RepoTool:
     @classmethod
     def tree(cls, root_path: str, max_depth: int | None = None):
         root = Path(root_path).resolve()
-        directories = set()
-        files = []
+        directories: set[str] = set()
+        files: list[str] = []
 
-        def build_node(path: Path, depth: int):
-            children = []
+        def build_node(path: Path, depth: int) -> dict:
+            children: list[dict] = []
             if max_depth is not None and depth >= max_depth:
                 return {"name": path.name or ".", "type": "directory", "path": "", "children": children}
 
             visible_children = [
                 child
                 for child in sorted(path.iterdir(), key=lambda item: (item.is_file(), item.name.lower()))
-                if not cls._should_ignore(child)
+                if not cls._should_ignore(child, root)
             ]
 
             for child in visible_children:
@@ -64,11 +74,16 @@ class RepoTool:
                 "children": children,
             }
 
+        # build_node populates `directories` and `files` as a side effect.
+        # It must be called before the return dict is constructed so that
+        # sorted(directories) and sorted(files) reflect the full traversal.
+        tree_node = build_node(root, 0)
+
         return {
             "root": root.as_posix(),
             "directories": sorted(directories),
             "files": sorted(files),
-            "tree": build_node(root, 0),
+            "tree": tree_node,
             "max_depth": max_depth,
         }
 
@@ -84,7 +99,7 @@ class RepoTool:
     def count_files(cls, root_path: str):
         root = Path(root_path).resolve()
         file_count = 0
-        directories = set()
+        directories: set[str] = set()
 
         for _, path in cls._walk(root_path):
             relative = path.relative_to(root)
@@ -102,3 +117,85 @@ class RepoTool:
             "files": file_count,
             "directories": len(directories),
         }
+
+    @classmethod
+    def stats(cls, root_path: str):
+        root = Path(root_path).resolve()
+        file_count = 0
+        directories: set[str] = set()
+        py_count = 0
+        md_count = 0
+        json_count = 0
+
+        largest_file_path = None
+        largest_file_size = 0
+        total_size = 0
+
+        for _, path in cls._walk(root_path):
+            relative = path.relative_to(root)
+            if path.is_file():
+                file_count += 1
+                parent = relative.parent
+                while parent != Path("."):
+                    directories.add(parent.as_posix())
+                    parent = parent.parent
+
+                try:
+                    size = path.stat().st_size
+                except OSError:
+                    size = 0
+                total_size += size
+                if size > largest_file_size:
+                    largest_file_size = size
+                    largest_file_path = path
+
+                suffix = path.suffix.lower()
+                if suffix == ".py":
+                    py_count += 1
+                elif suffix == ".md":
+                    md_count += 1
+                elif suffix == ".json":
+                    json_count += 1
+            elif path.is_dir():
+                directories.add(relative.as_posix())
+
+        largest_size_kb = round(largest_file_size / 1024)
+        total_size_kb = round(total_size / 1024)
+        largest_file_name = largest_file_path.name if largest_file_path else "None"
+
+        return {
+            "files": file_count,
+            "directories": len(directories),
+            "python": py_count,
+            "markdown": md_count,
+            "json": json_count,
+            "largest_file": largest_file_name,
+            "largest_size_kb": largest_size_kb,
+            "total_size_kb": total_size_kb,
+        }
+
+    @classmethod
+    def recent_files(cls, root_path: str, limit: int = 20) -> list[dict]:
+        root = Path(root_path).resolve()
+        files_with_mtime = []
+
+        for _, path in cls._walk(root_path):
+            if path.is_file():
+                try:
+                    mtime = path.stat().st_mtime
+                except OSError:
+                    continue
+                files_with_mtime.append((path, mtime))
+
+        files_with_mtime.sort(key=lambda x: x[1], reverse=True)
+
+        results = []
+        for path, mtime in files_with_mtime[:limit]:
+            from datetime import datetime
+            timestamp = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            results.append({
+                "path": path.relative_to(root).as_posix(),
+                "timestamp": timestamp
+            })
+
+        return results

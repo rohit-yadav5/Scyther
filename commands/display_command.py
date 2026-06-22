@@ -4,7 +4,7 @@ from core.models import CommandStatus
 
 class DisplayCommand:
     @staticmethod
-    def execute(context):
+    def execute(args: tuple, context) -> CommandStatus:
         show_display_settings()
         choice = input("display> ").strip()
         mapping = {"1": "minimal", "2": "standard", "3": "verbose", "4": "debug"}
