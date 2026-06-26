@@ -21,3 +21,6 @@ env/
 # OS metadata files
 .DS_Store
 Thumbs.db
+
+#extra
+pypl_uploader.py

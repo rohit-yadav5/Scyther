@@ -36,7 +36,7 @@ Scyther is a command-first, local-first developer CLI utility for repository ins
    ./scyther
    ```
 
-### From PyPI (Coming Soon in Sprint 11)
+### From PyPI
 
 Once published, you can install Scyther globally or in your active environment:
 ```bash
